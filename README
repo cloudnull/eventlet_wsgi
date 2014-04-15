@@ -1,0 +1,50 @@
+Generic Eventlet WSGI Server to use with Flask
+##############################################
+:date: 2013-05-01 14:22
+:tags: rackspace, openstack, aws, ec2, amazon, cloud, clustering, api, flask
+:category: \*nix
+
+Eventlet + Flask
+================
+
+The purpose of this repository is to provide for a general purpose eventlet
+server that can power just about any Flask Application. It is my hope that is
+used to rapidly spin up a WSGI server which has support for many common
+configurations.
+
+
+Usage
+-----
+
+To use the server look at extending / subclassing the Application module found
+at ``evenlet_wsgi.api.application.MainApplication``. When ready you can call
+the run method at ``eventlet_wsgi.run.executable``.
+
+
+Pseudo Code
+-----------
+
+You can see a full example of how to use this in the ``example`` directory
+
+
+Operational Tasks
+-----------------
+
+If you look in the ``etc`` directory you will several example configuration
+files as well as an example init script.
+
+
+CLI Options
+-----------
+
+.. code-block:: bash
+
+    Eventlet WSGI Server
+
+    optional arguments:
+      -h, --help      show this help message and exit
+      --debug         Enable Debug mode, Default False
+      --config-file   Set the path to the configuration file, Default
+                      /etc/eventlet_wsgi/eventlet_wsgi.conf
+
+    Licensed "GPLv3"
