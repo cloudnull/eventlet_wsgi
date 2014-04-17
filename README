@@ -8,17 +8,51 @@ Eventlet + Flask
 ================
 
 The purpose of this repository is to provide for a general purpose eventlet
-server that can power just about any Flask Application. It is my hope that is
+server that can power just about any Application. It is my hope that is
 used to rapidly spin up a WSGI server which has support for many common
-configurations.
+configurations while also being performant enough to server your content 
+without having to setup a more heavy weight web server.
+
+This is a great tool for embeded applications where Apache and or NGINX may
+not be an option.
 
 
 Usage
 -----
 
-To use the server look at extending / subclassing the Application module found
-at ``evenlet_wsgi.api.application.MainApplication``. When ready you can call
-the run method at ``eventlet_wsgi.run.executable``.
+To use ewsgi simply build your application and then pass the application and
+the relevant connfiguration to the server. Everything else is handled from
+there on in.
+
+Example:
+
+.. code-block::
+
+    # Set a logger for your application
+    run.preload(loggers=['github_hook_check'])
+
+    # Load the configuration file
+    CONFIG = run.CONFIG
+
+    # Load Default Configuration
+    default_config = CONFIG.config_args(section='default')
+
+    # Store network Configuration
+    network_config = CONFIG.config_args(section='network')
+
+    # Store SSL configuration
+    ssl_config = CONFIG.config_args(section='ssl')
+
+    # Store SQL Configuration
+    sql_config = CONFIG.config_args(section='sql')
+
+    # Start your application
+    run.start_server(
+        load_app=my_app,
+        default_cfg=default_config,
+        network_cfg=network_config,
+        ssl_cfg=ssl_config
+    )
 
 
 Pseudo Code

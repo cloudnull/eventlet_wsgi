@@ -27,22 +27,23 @@ from eventlet_wsgi import info
 
 class Server(object):
     """Start an Eventlet WSGI server."""
-    def __init__(self, load_app=None):
-        """Loads the flask application."""
 
-        # load the application class
-        if load_app is None:
-            from eventlet_wsgi.api import application
-            app = application.MainApplication()
-        else:
-            app = load_app
+    def __init__(self, load_app, default_cfg=None, network_cfg=None,
+                 ssl_cfg=None):
+        """Loads the flask application.
 
+        :param load_app: ``object``
+        :param default_cfg: ``dict``
+        :param network_cfg: ``dict``
+        :param ssl_cfg: ``dict``
+        """
         # Set the app used within this WSGI server
-        self.app = app.return_app()
+        self.app = load_app
 
-        self.net_cfg = self.app.config.get('network', {})
-        self.ssl_cfg = self.app.config.get('ssl', {})
-        self.def_cfg = self.app.config.get('default', {})
+        # Get configuration dictionaries
+        self.net_cfg = self._empty_config(network_cfg)
+        self.ssl_cfg = self._empty_config(ssl_cfg)
+        self.def_cfg = self._empty_config(default_cfg)
 
         # Set the logger
         self.log = logging.getLogger(self.def_cfg.get('appname'))
@@ -60,6 +61,18 @@ class Server(object):
         self.worker = None
 
         eventlet.patcher.monkey_patch()
+
+    @staticmethod
+    def _empty_config(config):
+        """Return a configuration dict.
+
+        :param config: ``dict``
+        :return: ``dict``
+        """
+        if config is None:
+            return {}
+        else:
+            return config
 
     def _ssl_kwargs(self):
         """Check if certificate files exist.

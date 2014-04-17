@@ -6,6 +6,7 @@
 # allows you to execute the example application from within the example
 # directory.
 import os
+import json
 import sys
 
 
@@ -25,79 +26,101 @@ if os.path.exists(MAIN):
     sys.path.insert(0, possible_topdir)
 
 
-
 # Example application
 # =============================================================================
 
-# Import the MainApplication Class which will be subclassed
-from eventlet_wsgi.api.application import MainApplication
+import datetime
+import logging
+import os
 
+import flask
 
 # Import the Server Run Method
+import eventlet_wsgi
 from eventlet_wsgi import run
+from eventlet_wsgi.common import system_config
 
+
+APPNAME = __name__
+CONFIG = system_config.ConfigurationSetup()
+
+# Load Default Configuration
+default_config = CONFIG.config_args(section='default')
+
+# Store network Configuration
+network_config = CONFIG.config_args(section='network')
+
+# Store SSL configuration
+ssl_config = CONFIG.config_args(section='ssl')
 
 # Load all of the relevant configuration bits
-run.preload()
+run.preload(loggers=[APPNAME])
+
+# Load the flask APP
+APP = flask.Flask(APPNAME)
+
+# Set Debug Mode
+DEBUG = default_config.get('debug', False)
+
+# Load Logging
+LOG = logging.getLogger(APPNAME)
+
+# Enable general debugging
+if DEBUG is True:
+    APP.debug = True
+
+# Enable Application Threading
+APP.threaded = True
+
+# Enforce strict slashes in URI's
+APP.url_map.strict_slashes = False
+
+# Add Default Handling for File not found.
+APP.errorhandler(eventlet_wsgi.not_found)
+
+# Load the BLUEPRINT handler
+BLUEPRINT = flask.Blueprint
+
+blueprints = []
+
+# Each Blueprint is essentially route. this has a name and needs to be
+# stored as an object which will be used as a decorator.
+hello_world = flask.Blueprint('hello', APPNAME)
+
+# The decorator object is appended to the "blueprints" list and will be
+# used later to register all blueprints.
+blueprints.append(hello_world)
 
 
-class AppClass(MainApplication):
-    """This is a subclass of the Main Application class.
-
-    This allows you to create a custom Flask Application without having to
-    setup and or dealing with a server.
-    """
-    def __init__(self):
-        super(AppClass, self).__init__()
-        self.blueprints = []
-
-    def get_date(self):
-        import datetime
-        return datetime.datetime.utcnow()
-
-    def routes(self):
-        """Load our new application routes.
-
-        To create a route do the following:
-        >>> newbp = flask.Blueprint('newbp', __name__)
-        >>> @newbp('/some/path', methods=['GET'])
-        >>> def _newbp():
-        ...    return self.flask.jsonify({'response': 'somedata'}), 200
-        >>> self.app.register_blueprint(newbp)
-        """
-        # Each Blueprint is essentially route. this has a name and needs to be
-        # stored as an object which will be used as a decorator.
-        hello_world = self.blueprint('hello', __name__)
-
-        # The decorator object is appended to the "blueprints" list and will be
-        # used later to register all blueprints.
-        self.blueprints.append(hello_world)
-
-        # This decorator loads the route and provides the allowed methods
-        # available from within the decorator
-        @hello_world.route('/hello', methods=['GET'])
-        def _hello_world():
-            """Return 200 response on GET '/hello'."""
-            self.log.debug(self.flask.request.method)
-            return 'hello world. The time is [ %s ]' % self.get_date(), 200
-
-        test_path = self.blueprint('test_path', __name__)
-        self.blueprints.append(test_path)
-
-        @test_path.route('/test', methods=['GET'])
-        def _test_path():
-            """Return 200 response on GET '/test'."""
-            state = {
-                'Application': self.name,
-                'time': self.get_date(),
-                'request': {
-                    'method': self.flask.request.method,
-                    'path': self.flask.request.path
-                }
-            }
-            self.log.debug(str(state))
-            return self.flask.jsonify({'response': state}), 200
+# This decorator loads the route and provides the allowed methods
+# available from within the decorator
+@hello_world.route('/hello', methods=['GET'])
+def _hello_world():
+    """Return 200 response on GET '/hello'."""
+    return 'hello world. The time is [ %s ]' % get_date(), 200
 
 
-# Run the new application with the subclass'd MainApplication
-run.start_server(load_app=AppClass())
+test_path = flask.Blueprint('test_path', __name__)
+blueprints.append(test_path)
+
+
+@test_path.route('/test', methods=['GET'])
+def _test_path():
+    """Return 200 response on GET '/test'."""
+    state = {
+        'Application': APPNAME,
+        'time': get_date(),
+        'request': {
+            'method': flask.request.method,
+            'path': flask.request.path
+        }
+    }
+    return json.dumps({'response': state}), 200
+
+
+def get_date():
+    return datetime.datetime.utcnow()
+
+
+# Run the new application
+run.start_server(load_app=APP)

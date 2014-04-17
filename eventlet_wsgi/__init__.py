@@ -7,7 +7,7 @@
 # details (see GNU General Public License).
 # http://www.gnu.org/licenses/gpl.html
 # =============================================================================
-import flask
+import json
 
 
 def not_found(message=None, error=None):
@@ -23,7 +23,7 @@ def not_found(message=None, error=None):
     if error is None:
         error = 404
 
-    return flask.jsonify({"response": message}), error
+    return json.dumps({"response": message}), error
 
 
 class WSGIServerFailure(Exception):

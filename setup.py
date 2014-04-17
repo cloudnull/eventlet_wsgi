@@ -35,7 +35,7 @@ setuptools.setup(
     description=info.__description__,
     long_description=LDINFO,
     license='GNU General Public License v3 or later (GPLv3+)',
-    packages=['eventlet_wsgi'],
+    packages=['eventlet_wsgi', 'eventlet_wsgi.server', 'eventlet_wsgi.common'],
     url=info.__url__,
     install_requires=required,
     classifiers=[
