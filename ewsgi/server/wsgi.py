@@ -8,7 +8,6 @@
 # http://www.gnu.org/licenses/gpl.html
 # =============================================================================
 import errno
-import logging
 import os
 import signal
 import socket
@@ -21,24 +20,27 @@ from eventlet.green import ssl as wsgi_ssl
 import eventlet.greenio
 from eventlet import wsgi
 
-import eventlet_wsgi
-from eventlet_wsgi import info
+from cloudlib import logger
+
+import ewsgi
 
 
 class Server(object):
     """Start an Eventlet WSGI server."""
 
-    def __init__(self, load_app, default_cfg=None, network_cfg=None,
-                 ssl_cfg=None):
+    def __init__(self, load_app, app_name=__name__, default_cfg=None,
+                 network_cfg=None, ssl_cfg=None, protocol='HTTP/1.1'):
         """Loads the flask application.
 
         :param load_app: ``object``
+        :param app_name: ``str``
         :param default_cfg: ``dict``
         :param network_cfg: ``dict``
         :param ssl_cfg: ``dict``
         """
         # Set the app used within this WSGI server
         self.app = load_app
+        self.app_name = app_name
 
         # Get configuration dictionaries
         self.net_cfg = self._empty_config(network_cfg)
@@ -46,12 +48,13 @@ class Server(object):
         self.def_cfg = self._empty_config(default_cfg)
 
         # Set the logger
-        self.log = logging.getLogger(self.def_cfg.get('appname'))
+        print self.def_cfg.get('appname', app_name)
+        self.log = logger.getLogger(self.def_cfg.get('appname', app_name))
 
         self.debug = self.def_cfg.get('debug_mode', False)
         self.server_socket = self._socket_bind()
 
-        wsgi.HttpProtocol.default_request_version = "HTTP/1.0"
+        wsgi.HttpProtocol.default_request_version = protocol
         self.protocol = wsgi.HttpProtocol
 
         pool_size = int(self.net_cfg.get('connection_pool', 1000))
@@ -115,6 +118,7 @@ class Server(object):
             str(self.net_cfg.get('bind_host', '127.0.0.1')),
             int(self.net_cfg.get('bind_port', 8080))
         )
+        self.log.debug(tcp_listener)
 
         wsgi_backlog = self.net_cfg.get('backlog', 128)
         if wsgi_backlog < 1:
@@ -126,8 +130,8 @@ class Server(object):
             try:
                 sock = eventlet.listen(
                     tcp_listener,
-                    backlog=wsgi_backlog,
-                    family=socket.AF_INET
+                    family=socket.AF_INET,
+                    backlog=wsgi_backlog
                 )
 
                 if self.ssl_cfg.get('use_ssl', False) is True:
@@ -137,7 +141,7 @@ class Server(object):
 
             except socket.error as err:
                 if err.args[0] != errno.EADDRINUSE:
-                    raise eventlet_wsgi.WSGIServerFailure(
+                    raise ewsgi.WSGIServerFailure(
                         'Not able to bind to socket %s %s' % tcp_listener
                     )
                 retry_time_left = retry_until - time.time()
@@ -151,7 +155,7 @@ class Server(object):
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                 return sock
         else:
-            raise eventlet_wsgi.WSGIServerFailure('Socket Bind Failure.')
+            raise ewsgi.WSGIServerFailure('Socket Bind Failure.')
 
     def _start(self):
         """Start the WSGI server."""
@@ -160,7 +164,7 @@ class Server(object):
             self.app,
             custom_pool=self.spawn_pool,
             protocol=self.protocol,
-            log=eventlet_wsgi.EventLogger(self.log),
+            log=ewsgi.EventLogger(self.log),
         )
         self.spawn_pool.waitall()
 
@@ -169,14 +173,14 @@ class Server(object):
         signal.signal(signal.SIGINT, self.stop)
         signal.signal(signal.SIGHUP, self.stop)
         self.worker = eventlet.spawn(self._start)
-        self.log.info('%s Has started.' % info.__appname__)
+        self.log.info('%s Has started.' % self.app_name)
 
     def stop(self, *args):
         """Stop the WSGI server.
 
         :param args: ``list``
         """
-        self.log.warn('Stopping [ %s ] server.' % info.__appname__)
+        self.log.warn('Stopping [ %s ] server.' % self.app_name)
         self.log.debug(args)
         if self.worker is not None:
             # Resize pool to stop new requests from being processed
@@ -189,4 +193,11 @@ class Server(object):
             if self.worker is not None:
                 self.worker.wait()
         except greenlet.GreenletExit:
-            self.log.warn("[ %s ] WSGI server has stopped." % info.__appname__)
+            self.log.warn('[ %s ] ewsgi server has stopped.' % self.app_name)
+            self.stop(self)
+        except OSError as exp:
+            self.log.fatal(
+                '[ %s ] ewsgi server has been halted, Reason [ %s ].',
+                self.app_name, exp
+            )
+            self.stop(self)

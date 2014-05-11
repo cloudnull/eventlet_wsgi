@@ -11,7 +11,7 @@
 import setuptools
 import sys
 
-from eventlet_wsgi import info
+from ewsgi import info
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
@@ -35,7 +35,7 @@ setuptools.setup(
     description=info.__description__,
     long_description=LDINFO,
     license='GNU General Public License v3 or later (GPLv3+)',
-    packages=['eventlet_wsgi', 'eventlet_wsgi.server', 'eventlet_wsgi.common'],
+    packages=['ewsgi', 'ewsgi.server', 'ewsgi.common'],
     url=info.__url__,
     install_requires=required,
     classifiers=[
