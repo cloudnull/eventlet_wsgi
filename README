@@ -1,5 +1,5 @@
-Generic Eventlet WSGI Server to use with Flask
-##############################################
+Generic Eventlet WSGI Server
+############################
 :date: 2013-05-01 14:22
 :tags: cloud, api, flask, wsgi, eventlet
 :category: \*nix
