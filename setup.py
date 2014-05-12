@@ -35,7 +35,7 @@ setuptools.setup(
     description=info.__description__,
     long_description=LDINFO,
     license='GNU General Public License v3 or later (GPLv3+)',
-    packages=['ewsgi', 'ewsgi.server', 'ewsgi.common'],
+    packages=['ewsgi', 'ewsgi.server'],
     url=info.__url__,
     install_requires=required,
     classifiers=[
