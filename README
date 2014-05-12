@@ -1,11 +1,11 @@
 Generic Eventlet WSGI Server to use with Flask
 ##############################################
 :date: 2013-05-01 14:22
-:tags: rackspace, openstack, aws, ec2, amazon, cloud, clustering, api, flask
+:tags: cloud, api, flask, wsgi, eventlet
 :category: \*nix
 
-Eventlet + Flask
-================
+Eventlet WSGI Server
+====================
 
 The purpose of this repository is to provide for a general purpose eventlet
 server that can power just about any Application. It is my hope that is
@@ -13,7 +13,7 @@ used to rapidly spin up a WSGI server which has support for many common
 configurations while also being performant enough to server your content 
 without having to setup a more heavy weight web server.
 
-This is a great tool for embeded applications where Apache and or NGINX may
+This is a great tool for embedded applications where Apache and or NGINX may
 not be an option.
 
 
@@ -21,64 +21,30 @@ Usage
 -----
 
 To use ewsgi simply build your application and then pass the application and
-the relevant connfiguration to the server. Everything else is handled from
+the relevant configuration to the server. Everything else is handled from
 there on in.
 
-Example:
+For an example on how an app could look like please go here: 
+https://github.com/cloudnull/eventlet_wsgi/tree/master/example_app
 
-.. code-block::
 
-    # Set a logger for your application
-    run.preload(loggers=['github_hook_check'])
+However, if you would like to know how to make the server work, minimally, 
+you can simply instantiate the server and run it:
 
-    # Load the configuration file
-    CONFIG = run.CONFIG
+.. code-block:: bash 
 
-    # Load Default Configuration
-    default_config = CONFIG.config_args(section='default')
+    # Assuming you have a built app import it and pass it to eswgi
+    from ewsgi import run
 
-    # Store network Configuration
-    network_config = CONFIG.config_args(section='network')
+    # This import would be your app
+    import app
 
-    # Store SSL configuration
-    ssl_config = CONFIG.config_args(section='ssl')
-
-    # Store SQL Configuration
-    sql_config = CONFIG.config_args(section='sql')
-
-    # Start your application
-    run.start_server(
-        load_app=my_app,
-        default_cfg=default_config,
-        network_cfg=network_config,
-        ssl_cfg=ssl_config
+    # Run the new application with all of the relevant configuration bits
+    run.preload_and_start(
+        app_name=app.APPNAME,    # Name of your app
+        load_app=app.APP,        # The prebuilt app object
+        config_path=os.getcwd(), # The path to your configuration files
+        loggers=[app.APPNAME]    # List of log handlers for the app
     )
 
 
-Pseudo Code
------------
-
-You can see a full example of how to use this in the ``example`` directory
-
-
-Operational Tasks
------------------
-
-If you look in the ``etc`` directory you will several example configuration
-files as well as an example init script.
-
-
-CLI Options
------------
-
-.. code-block:: bash
-
-    Eventlet WSGI Server
-
-    optional arguments:
-      -h, --help      show this help message and exit
-      --debug         Enable Debug mode, Default False
-      --config-file   Set the path to the configuration file, Default
-                      /etc/eventlet_wsgi/eventlet_wsgi.conf
-
-    Licensed "GPLv3"
