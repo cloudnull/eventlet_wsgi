@@ -15,5 +15,5 @@ __version__ = "0.0.3"
 __status__ = "production"
 __url__ = "https://github.com/cloudnull/ewsgi"
 __license__ = 'GNU General Public License v3 or later (GPLv3+)'
-__description__ = "Application to build clouds using Config Management"
+__description__ = "Generic Eventlet WSGI server built to serve Python Apps"
 __appname__ = "ewsgi"
